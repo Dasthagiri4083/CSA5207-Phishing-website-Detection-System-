@@ -1,0 +1,73 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import joblib
+import tkinter as tk
+from tkinter import messagebox
+
+# Load the dataset
+data = pd.read_csv('C:/Users/K.JAYADATTA/Desktop/Phising_Testing_Dataset.csv')
+
+# Selecting features
+selected_features = ['URL_Length', 'having_At_Symbol', 'Prefix_Suffix', 'Google_Index']
+X = data[selected_features]
+y = data.iloc[:, -1]
+
+# Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+
+# Save the model
+joblib.dump(model, 'phishing_model.pkl')
+
+# Predict and evaluate
+predictions = model.predict(X_test)
+accuracy = accuracy_score(y_test, predictions)
+print(f'Accuracy: {accuracy * 100:.2f}%')
+print('Classification Report:')
+print(classification_report(y_test, predictions, zero_division=1))
+
+# GUI to predict if a website is phishing
+
+def predict_website():
+    def submit():
+        features = []
+        for entry in entries:
+            value = float(entry.get())
+            features.append(value)
+
+        # Convert input to DataFrame with feature names to avoid warnings
+        input_data = pd.DataFrame([features], columns=selected_features)
+
+        # Load the model
+        model = joblib.load('phishing_model.pkl')
+        prediction = model.predict(input_data)
+
+        # Display result
+        if prediction[0] == 1:
+            messagebox.showinfo("Result", "The website is a phishing website.")
+        else:
+            messagebox.showinfo("Result", "The website is not a phishing website.")
+
+    # Create GUI
+    root = tk.Tk()
+    root.title("Phishing Website Detector")
+
+    labels = selected_features
+
+    entries = []
+    for label in labels:
+        tk.Label(root, text=label).pack()
+        entry = tk.Entry(root)
+        entry.pack()
+        entries.append(entry)
+
+    tk.Button(root, text='Predict', command=submit).pack()
+    root.mainloop()
+
+# Launch the GUI
+predict_website()
